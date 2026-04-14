@@ -56,7 +56,7 @@ pipeline {
         stage('Trivy Scan') {
             agent {
                 docker {
-                    image 'aquasec/trivy:latest'
+                    image 'aquasec/trivy:0.69.3'
                     reuseNode true
                     args '-v /var/run/docker.sock:/var/run/docker.sock -v $HOME/.cache:/root/.cache'
                 }
