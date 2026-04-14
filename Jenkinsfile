@@ -64,6 +64,7 @@ pipeline {
             steps {
                 sh '''
                     trivy image \
+                      --cache-dir /tmp/trivy-cache \
                       --exit-code 1 \
                       --severity HIGH,CRITICAL \
                       ${IMAGE_NAME}:${IMAGE_TAG}
