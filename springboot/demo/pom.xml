@@ -19,6 +19,7 @@
     <properties>
         <java.version>17</java.version>
         <tomcat.version>10.1.54</tomcat.version>
+        <spring-framework.version>6.2.11</spring-framework.version>
     </properties>
 
     <dependencies>
