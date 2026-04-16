@@ -19,7 +19,7 @@ pipeline {
                     sh """
                         git config user.email "jenkins@example.com"
                         git config user.name "Jenkins"
-                        sed -i 's|shantanu1990/springboot-demo:.*|shantanu1990/springboot-demo:${params.IMAGE_TAG}|g' \${WORKSPACE}/springboot-k8s-manifests/deployment.yaml                        git add springboot-k8s-manifests/deployment.yaml
+                        sed -i 's|shantanu1990/springboot-demo:.*|shantanu1990/springboot-demo:${params.IMAGE_TAG}|g' \${WORKSPACE}/springboot-k8s-manifests/deployment.yml                        git add springboot-k8s-manifests/deployment.yaml
                         git commit -m "update image tag to ${params.IMAGE_TAG}"
                         git push https://\${GIT_USER}:\${GIT_TOKEN}@github.com/ShantanuParanjpe/springboot-POC.git main
                     """
