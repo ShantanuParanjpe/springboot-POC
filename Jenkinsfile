@@ -90,6 +90,16 @@ pipeline {
                 }
             }
         }
+        
+        stage('Trigger CD Pipeline') {
+            steps {
+               build job: 'springboot-CD',  // name of CD pipeline job in Jenkins
+                     parameters: [
+                       string(name: 'IMAGE_TAG', value: "${BUILD_NUMBER}")
+              ],
+              wait: true  // don't wait for CD to finish
+           }
+        }
     }
 
     post {
