@@ -1,0 +1,99 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  IMAGE_NAME: springboot-demo
+  IMAGE_TAG: ${{ github.run_number }}
+
+jobs:
+  build-and-scan:
+    name: Build, Test & SonarQube Scan
+    runs-on: ubuntu-latest
+    # Equivalent of Jenkins: agent { docker { image 'maven:3.9.11-eclipse-temurin-17' } }
+    # All steps — including checkout — run inside this container.
+    # The image includes git, so actions/checkout works fine here.
+    container:
+      image: maven:3.9.11-eclipse-temurin-17
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # maven clean verify  →  compiles .java → .class → packages into JAR
+      # sonar:sonar         →  ships analysis results to SonarQube
+      - name: Build & SonarQube Scan
+        working-directory: springboot/demo
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          mvn clean verify sonar:sonar \
+            -Dsonar.projectKey=springboot-demo \
+            -Dsonar.projectName=springboot-demo \
+            -Dsonar.host.url=${{ env.SONAR_HOST_URL }} \
+            -Dsonar.token=${{ env.SONAR_TOKEN }}
+
+      - name: Quality Gate Check
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      # The JAR produced by mvn verify is passed to the next job
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: springboot/demo/target/demo-1.0-SNAPSHOT.jar
+          retention-days: 1
+
+  docker-build-push:
+    name: Docker Build, Trivy Scan & Push
+    runs-on: ubuntu-latest
+    needs: build-and-scan
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Download the JAR built by the previous job — no recompile needed
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+          path: springboot/demo/target
+
+      - name: Docker Build
+        working-directory: springboot/demo
+        run: docker build -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
+
+      - name: Trivy Image Scan
+        uses: aquasecurity/trivy-action@0.30.0
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          format: table
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+          cache-dir: /tmp/trivy-cache
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASS }}
+
+      - name: Tag & Push Image
+        run: |
+          docker tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
+            ${{ secrets.DOCKER_USER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          docker push ${{ secrets.DOCKER_USER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+      - name: Docker Logout
+        if: always()
+        run: docker logout
