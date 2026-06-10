@@ -13,10 +13,9 @@ env:
 jobs:
   build-and-scan:
     name: Build, Test & SonarQube Scan
-    runs-on: ubuntu-latest
-    # Equivalent of Jenkins: agent { docker { image 'maven:3.9.11-eclipse-temurin-17' } }
-    # All steps — including checkout — run inside this container.
-    # The image includes git, so actions/checkout works fine here.
+    runs-on: githubrunner
+    # Runs inside Maven container — equivalent of Jenkins: agent { docker { image 'maven:3.9.11-eclipse-temurin-17' } }
+    # JAR is created inside this container so must be uploaded before container is destroyed
     container:
       image: maven:3.9.11-eclipse-temurin-17
 
@@ -45,7 +44,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-      # The JAR produced by mvn verify is passed to the next job
+      # JAR is inside the Maven container — upload before container is destroyed
+      # so docker-build-push job can access it
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
         with:
@@ -55,14 +55,14 @@ jobs:
 
   docker-build-push:
     name: Docker Build, Trivy Scan & Push
-    runs-on: ubuntu-latest
+    runs-on: githubrunner
     needs: build-and-scan
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Download the JAR built by the previous job — no recompile needed
+      # Download JAR produced by build-and-scan job — no recompile needed
       - name: Download JAR artifact
         uses: actions/download-artifact@v4
         with:
