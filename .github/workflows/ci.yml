@@ -13,7 +13,7 @@ env:
 jobs:
   build-and-scan:
     name: Build, Test & SonarQube Scan
-    runs-on: githubrunner
+    runs-on: self-hosted
     # Runs inside Maven container — equivalent of Jenkins: agent { docker { image 'maven:3.9.11-eclipse-temurin-17' } }
     # JAR is created inside this container so must be uploaded before container is destroyed
     container:
@@ -55,7 +55,7 @@ jobs:
 
   docker-build-push:
     name: Docker Build, Trivy Scan & Push
-    runs-on: githubrunner
+    runs-on: self-hosted
     needs: build-and-scan
 
     steps:
