@@ -80,7 +80,7 @@ jobs:
         run: docker build -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
 
       - name: Trivy Image Scan
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.31.0
         with:
           image-ref: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
           format: table
