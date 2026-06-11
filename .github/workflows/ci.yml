@@ -65,6 +65,10 @@ jobs:
     needs: build-and-scan
 
     steps:
+      - name: Fix workspace permissions
+        if: always()
+        run: sudo chown -R githubrunner:githubrunner ${{ github.workspace }} || true
+        
       - name: Checkout Code
         uses: actions/checkout@v4
 
