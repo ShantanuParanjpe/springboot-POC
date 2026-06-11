@@ -18,7 +18,7 @@ jobs:
     # JAR is created inside this container so must be uploaded before container is destroyed
     container:
       image: maven:3.9.11-eclipse-temurin-17
-
+      options: --user 1001:1001
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
