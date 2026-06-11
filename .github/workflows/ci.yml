@@ -37,12 +37,18 @@ jobs:
             -Dsonar.host.url=${{ env.SONAR_HOST_URL }} \
             -Dsonar.token=${{ env.SONAR_TOKEN }}
 
-      - name: Quality Gate Check
-        uses: sonarsource/sonarqube-quality-gate-action@master
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+             # Wait for Quality Gate result via SonarQube API
+            echo "Waiting for Quality Gate..."
+            sleep 10
+            STATUS=$(curl -s -u $SONAR_TOKEN: \
+           "$SONAR_HOST_URL/api/qualitygates/project_status?projectKey=springboot-demo" \
+           | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
+          echo "Quality Gate Status: $STATUS"
+          if [ "$STATUS" != "OK" ]; then
+           echo "Quality Gate FAILED"
+           exit 1
+          fi
+          echo "Quality Gate PASSED"
 
       # JAR is inside the Maven container — upload before container is destroyed
       # so docker-build-push job can access it
