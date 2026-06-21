@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/ShantanuParanjpe/springboot-CD.git
+    targetRevision: HEAD
+    path: argocd-manifest-files        # folder ArgoCD watches
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: my-app
+  syncPolicy:
+    automated:
+      prune: true                   # delete removed resources
+      selfHeal: true                # revert manual changes
+    syncOptions:
+    - CreateNamespace=true
